@@ -22,21 +22,22 @@ export function usePlayer() {
 
       setPlayer(data)
       setLoading(false)
+
+      // Listen for realtime updates to own profile
+      const channel = supabase
+        .channel('player-profile')
+        .on('postgres_changes', {
+          event: 'UPDATE', schema: 'public', table: 'users',
+          filter: `id=eq.${user.id}`, // Only listen for current user updates
+        }, (payload: any) => {
+          setPlayer(payload.new as UserRow)
+        })
+        .subscribe()
+
+      return () => { supabase.removeChannel(channel) }
     }
 
     fetchPlayer()
-
-    // Listen for realtime updates to own profile
-    const channel = supabase
-      .channel('player-profile')
-      .on('postgres_changes', {
-        event: 'UPDATE', schema: 'public', table: 'users',
-      }, payload => {
-        setPlayer(payload.new as UserRow)
-      })
-      .subscribe()
-
-    return () => { supabase.removeChannel(channel) }
   }, [supabase])
 
   const xpProgress = player

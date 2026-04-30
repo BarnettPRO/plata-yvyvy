@@ -13,8 +13,14 @@ export function useCoins(lat: number | null, lng: number | null) {
     setLoading(true)
     try {
       const res  = await fetch(`/api/coins?lat=${lat}&lng=${lng}`)
+      if (!res.ok) {
+        console.error('Failed to fetch coins:', res.statusText)
+        return
+      }
       const data = await res.json()
       setCoins(data.coins ?? [])
+    } catch (error) {
+      console.error('Error fetching coins:', error)
     } finally {
       setLoading(false)
     }
@@ -36,8 +42,8 @@ export function useCoins(lat: number | null, lng: number | null) {
         schema: 'public',
         table:  'coins',
         filter: 'is_collected=eq.true',
-      }, payload => {
-        setCoins(prev => prev.filter(c => c.id !== payload.new.id))
+      }, (payload: any) => {
+        setCoins((prev: CoinRow[]) => prev.filter((c: CoinRow) => c.id !== payload.new.id))
       })
       .subscribe()
 
@@ -45,18 +51,29 @@ export function useCoins(lat: number | null, lng: number | null) {
   }, [supabase])
 
   const collectCoin = useCallback(async (coinId: string, userLat: number, userLng: number) => {
-    const res  = await fetch('/api/coins/collect', {
-      method:  'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({ coinId, userLat, userLng }),
-    })
-    const data = await res.json()
+    try {
+      const res  = await fetch('/api/coins/collect', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ coinId, userLat, userLng }),
+      })
+      
+      if (!res.ok) {
+        console.error('Failed to collect coin:', res.statusText)
+        return { success: false, error: res.statusText }
+      }
+      
+      const data = await res.json()
 
-    if (data.success) {
-      setCoins(prev => prev.filter(c => c.id !== coinId))
+      if (data.success) {
+        setCoins((prev: CoinRow[]) => prev.filter((c: CoinRow) => c.id !== coinId))
+      }
+
+      return data
+    } catch (error) {
+      console.error('Error collecting coin:', error)
+      return { success: false, error: 'Network error' }
     }
-
-    return data
   }, [])
 
   return { coins, loading, collectCoin, refresh: fetchCoins }

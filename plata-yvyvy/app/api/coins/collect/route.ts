@@ -44,17 +44,27 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Too far away', distance }, { status: 403 })
   }
 
-  // Mark coin collected
-  await admin.from('coins').update({ is_collected: true }).eq('id', coinId)
-
-  // Record collection
-  await admin.from('collections').insert({
+  // Record collection first (atomic operation)
+  const { error: collectionError } = await admin.from('collections').insert({
     user_id:     user.id,
     coin_id:     coinId,
     xp_gained:   coin.xp_value,
     user_lat:    userLat,
     user_lng:    userLng,
   })
+
+  if (collectionError) {
+    return NextResponse.json({ error: 'Failed to record collection' }, { status: 500 })
+  }
+
+  // Mark coin collected
+  const { error: updateError } = await admin.from('coins').update({ is_collected: true }).eq('id', coinId)
+  
+  if (updateError) {
+    // Rollback collection if coin update fails
+    await admin.from('collections').delete().eq('user_id', user.id).eq('coin_id', coinId)
+    return NextResponse.json({ error: 'Failed to update coin' }, { status: 500 })
+  }
 
   // Update user XP
   const { data: userData } = await admin
