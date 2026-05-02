@@ -28,7 +28,32 @@ export async function GET(request: NextRequest) {
         console.log('Successfully authenticated user:', data.user.id)
         
         // Create user profile if it doesn't exist
-        // Note: Profile creation will be handled by the useUserProfile hook on first visit
+        try {
+          // Simple insert with ignore conflicts
+          const { error: profileError } = await (supabase as any)
+            .from('user_profile')
+            .insert({
+              id: data.user.id,
+              email: data.user.email,
+              plan: 'free',
+              coins_collected_today: 0,
+              streak_days: 0,
+              radar_pings_today: 3,
+              total_coins: 0,
+              total_value: 0,
+              level: 1,
+            })
+            .select()
+            .single()
+
+          if (profileError && !profileError.message?.includes('duplicate')) {
+            console.error('Error creating user profile:', profileError)
+          } else {
+            console.log('User profile creation completed')
+          }
+        } catch (error) {
+          console.error('Error in user profile creation:', error)
+        }
 
         return NextResponse.redirect(`${origin}${next}`)
       }
