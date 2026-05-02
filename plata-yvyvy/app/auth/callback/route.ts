@@ -4,7 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url)
   const code  = searchParams.get('code')
-  const next  = searchParams.get('next') ?? '/dashboard'
+  const next  = searchParams.get('next') ?? '/map'
 
   if (code) {
     const supabase = createClient()
@@ -12,18 +12,7 @@ export async function GET(request: NextRequest) {
 
     if (!error && data.user) {
       // Create user profile if it doesn't exist
-      const { error: profileError } = await supabase
-        .from('user_profile')
-        .upsert({
-          id: data.user.id,
-        }, { 
-          onConflict: 'id', 
-          ignoreDuplicates: true 
-        })
-
-      if (profileError) {
-        console.error('Error creating user profile:', profileError)
-      }
+      // Note: Profile creation will be handled by the useUserProfile hook on first visit
 
       return NextResponse.redirect(`${origin}${next}`)
     }

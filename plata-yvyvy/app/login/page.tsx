@@ -15,23 +15,43 @@ export default function LoginPage() {
     setLoading(true)
     setError(null)
 
-    const supabase = createClient()
-    const { error } = await supabase.auth.signInWithOtp({
-      email,
-      options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
-    })
+    try {
+      const supabase = createClient()
+      if (!supabase) {
+        setError('Error de conexión. Intentá de nuevo.')
+        setLoading(false)
+        return
+      }
 
-    if (error) setError(error.message)
-    else setSent(true)
-    setLoading(false)
+      const { error } = await supabase.auth.signInWithOtp({
+        email,
+        options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
+      })
+
+      if (error) setError(error.message)
+      else setSent(true)
+    } catch (error) {
+      setError('Error al enviar el link mágico')
+    } finally {
+      setLoading(false)
+    }
   }
 
   const handleGoogle = async () => {
-    const supabase = createClient()
-    await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options:  { redirectTo: `${window.location.origin}/auth/callback` },
-    })
+    try {
+      const supabase = createClient()
+      if (!supabase) {
+        setError('Error de conexión. Intentá de nuevo.')
+        return
+      }
+
+      await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options:  { redirectTo: `${window.location.origin}/auth/callback` },
+      })
+    } catch (error) {
+      setError('Error al iniciar con Google')
+    }
   }
 
   return (
