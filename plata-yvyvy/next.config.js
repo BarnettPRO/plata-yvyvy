@@ -15,8 +15,6 @@ const nextConfig = {
   },
   // Required for Leaflet
   transpilePackages: ['leaflet', 'react-leaflet'],
-  // Explicitly set output mode for Vercel
-  output: undefined,
 }
 
 module.exports = nextConfig
