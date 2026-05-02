@@ -20,13 +20,46 @@ export function usePlayer() {
         const { data: { user } } = await supabase.auth.getUser()
         if (!user) { setLoading(false); return }
 
-        const { data } = await supabase
+        const { data, error } = await supabase
           .from('user_profile')
           .select('*')
           .eq('id', user.id)
-          .single()
+          .maybeSingle()
 
-        setPlayer(data)
+        if (error) {
+          console.error('Error fetching player:', error)
+        } else if (data) {
+          setPlayer(data)
+        } else {
+          // Profile doesn't exist, create it
+          try {
+            const { error: insertError } = await (supabase as any)
+              .from('user_profile')
+              .insert({
+                id: user.id,
+                email: user.email,
+                plan: 'free',
+                coins_collected_today: 0,
+                streak_days: 0,
+                radar_pings_today: 3,
+                total_coins: 0,
+                total_value: 0,
+                level: 1,
+                created_at: new Date().toISOString(),
+              })
+              .select()
+              .single()
+
+            if (insertError) {
+              console.error('Error creating player profile:', insertError)
+            } else {
+              setPlayer(insertError ? null : (insertError as any))
+            }
+          } catch (err) {
+            console.error('Error in player profile creation:', err)
+          }
+        }
+
         setLoading(false)
 
         // Listen for realtime updates to own profile

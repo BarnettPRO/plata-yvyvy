@@ -10,6 +10,11 @@ export function useUserProfile() {
 
   useEffect(() => {
     const fetchProfile = async () => {
+      if (!supabase) {
+        setLoading(false)
+        return
+      }
+
       const { data: { user } } = await supabase.auth.getUser()
       
       if (!user) {
@@ -21,12 +26,40 @@ export function useUserProfile() {
         .from('user_profile')
         .select('*')
         .eq('id', user.id)
-        .single()
+        .maybeSingle()
 
       if (error) {
         console.error('Error fetching profile:', error)
-      } else {
+      } else if (data) {
         setProfile(data)
+      } else {
+        // Profile doesn't exist, create it
+        try {
+          const { error: insertError } = await (supabase as any)
+            .from('user_profile')
+            .insert({
+              id: user.id,
+              email: user.email,
+              plan: 'free',
+              coins_collected_today: 0,
+              streak_days: 0,
+              radar_pings_today: 3,
+              total_coins: 0,
+              total_value: 0,
+              level: 1,
+              created_at: new Date().toISOString(),
+            })
+            .select()
+            .single()
+
+          if (insertError) {
+            console.error('Error creating profile:', insertError)
+          } else {
+            setProfile(insertError ? null : (insertError as any))
+          }
+        } catch (err) {
+          console.error('Error in profile creation:', err)
+        }
       }
 
       setLoading(false)
@@ -34,27 +67,27 @@ export function useUserProfile() {
 
     fetchProfile()
 
-    const { data: { subscription } } = supabase
-      .channel('profile-changes')
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'user_profile',
-        filter: `id=eq.${profile?.id}`
-      }, (payload) => {
-        if (payload.eventType === 'UPDATE') {
-          setProfile(payload.new as UserProfileRow)
+    if (!supabase) {
+      setLoading(false)
+      return
+    }
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        // Re-fetch profile when auth state changes
+        if (session?.user) {
+          fetchProfile()
         }
-      })
-      .subscribe()
+      }
+    )
 
     return () => subscription.unsubscribe()
   }, [supabase, profile?.id])
 
   const updateProfile = async (updates: Partial<UserProfileRow>) => {
-    if (!profile) return
+    if (!profile || !supabase) return
 
-    const { error } = await supabase
+    const { error } = await (supabase as any)
       .from('user_profile')
       .update(updates)
       .eq('id', profile.id)
