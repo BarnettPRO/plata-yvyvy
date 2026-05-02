@@ -6,10 +6,10 @@ import BottomNav          from '@/components/layout/BottomNav'
 
 export default function ProfilePage() {
   const { player, xpProgress } = usePlayer()
-  const supabase = createClient()
   const router   = useRouter()
 
   const handleSignOut = async () => {
+    const supabase = createClient()
     await supabase.auth.signOut()
     router.push('/login')
   }

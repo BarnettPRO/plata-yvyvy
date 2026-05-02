@@ -1,51 +1,61 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { UserRow } from '@/types/database.types'
+import { UserProfileRow } from '@/types/database.types'
 import { xpForNextLevel } from '@/lib/game/coinGenerator'
 
 export function usePlayer() {
-  const [player, setPlayer]   = useState<UserRow | null>(null)
+  const [player, setPlayer]   = useState<UserProfileRow | null>(null)
   const [loading, setLoading] = useState(true)
-  const supabase              = createClient()
 
   useEffect(() => {
     const fetchPlayer = async () => {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) { setLoading(false); return }
+      try {
+        const supabase = createClient()
+        if (!supabase) {
+          setLoading(false)
+          return
+        }
 
-      const { data } = await supabase
-        .from('users')
-        .select('*')
-        .eq('id', user.id)
-        .single()
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) { setLoading(false); return }
 
-      setPlayer(data)
-      setLoading(false)
+        const { data } = await supabase
+          .from('user_profile')
+          .select('*')
+          .eq('id', user.id)
+          .single()
 
-      // Listen for realtime updates to own profile
-      const channel = supabase
-        .channel('player-profile')
-        .on('postgres_changes', {
-          event: 'UPDATE', schema: 'public', table: 'users',
-          filter: `id=eq.${user.id}`, // Only listen for current user updates
-        }, (payload: any) => {
-          setPlayer(payload.new as UserRow)
-        })
-        .subscribe()
+        setPlayer(data)
+        setLoading(false)
 
-      return () => { supabase.removeChannel(channel) }
+        // Listen for realtime updates to own profile
+        const channel = supabase
+          .channel('player-profile')
+          .on('postgres_changes', {
+            event: 'UPDATE', schema: 'public', table: 'user_profile',
+            filter: `id=eq.${user.id}`, // Only listen for current user updates
+          }, (payload: any) => {
+            setPlayer(payload.new as UserProfileRow)
+          })
+          .subscribe()
+
+        return () => { supabase.removeChannel(channel) }
+      } catch (error) {
+        console.error('Error fetching player:', error)
+        setLoading(false)
+      }
     }
 
     fetchPlayer()
-  }, [supabase])
+  }, [])
 
   const xpProgress = player
     ? {
-        current:  player.total_xp - getXPAtLevel(player.level),
+        current:  player.total_value - getXPAtLevel(player.level),
         needed:   xpForNextLevel(player.level),
         percent:  Math.min(100, Math.round(
-          ((player.total_xp - getXPAtLevel(player.level)) / xpForNextLevel(player.level)) * 100
+          ((player.total_value - getXPAtLevel(player.level)) / xpForNextLevel(player.level)) * 100
         )),
       }
     : null

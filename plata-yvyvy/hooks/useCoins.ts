@@ -1,47 +1,72 @@
 'use client'
 import { useState, useEffect, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { CoinRow } from '@/types/database.types'
+import { CoinRow, CoinRarity, UserProfileRow } from '@/types/database.types'
+import { useUserProfile } from './useUserProfile'
 
 export function useCoins(lat: number | null, lng: number | null) {
-  const [coins, setCoins]       = useState<CoinRow[]>([])
-  const [loading, setLoading]   = useState(false)
-  const supabase                = createClient()
+  const [coins, setCoins] = useState<CoinRow[]>([])
+  const [loading, setLoading] = useState(false)
+  const { profile } = useUserProfile()
+  const supabase = createClient()
 
   const fetchCoins = useCallback(async () => {
     if (!lat || !lng) return
     setLoading(true)
     try {
-      const res  = await fetch(`/api/coins?lat=${lat}&lng=${lng}`)
-      if (!res.ok) {
-        console.error('Failed to fetch coins:', res.statusText)
+      const { data, error } = await supabase
+        .from('coins')
+        .select('*')
+        .eq('collected', false)
+        .gte('lat', lat - 0.009) // ~1km bounding box
+        .lte('lat', lat + 0.009)
+        .gte('lng', lng - 0.012)
+        .lte('lng', lng + 0.012)
+        .limit(50)
+
+      if (error) {
+        console.error('Failed to fetch coins:', error)
         return
       }
-      const data = await res.json()
-      setCoins(data.coins ?? [])
+
+      // Filter coins based on user's plan
+      let filteredCoins = data || []
+      if (profile) {
+        filteredCoins = data.filter(coin => {
+          if (coin.rarity === 'common') return true
+          if (coin.rarity === 'rare') return ['explorador', 'conquistador', 'leyenda'].includes(profile.plan)
+          if (coin.rarity === 'legendary') return ['conquistador', 'leyenda'].includes(profile.plan)
+          return false
+        })
+      } else {
+        // Non-authenticated users only see common coins
+        filteredCoins = data.filter(coin => coin.rarity === 'common')
+      }
+
+      setCoins(filteredCoins)
     } catch (error) {
       console.error('Error fetching coins:', error)
     } finally {
       setLoading(false)
     }
-  }, [lat, lng])
+  }, [lat, lng, profile])
 
-  // Fetch on location change (throttled)
+  // Fetch on location change
   useEffect(() => {
     fetchCoins()
     const interval = setInterval(fetchCoins, 30_000)
     return () => clearInterval(interval)
   }, [fetchCoins])
 
-  // Realtime subscription — remove coin when collected by anyone
+  // Realtime subscription
   useEffect(() => {
     const channel = supabase
       .channel('coins-realtime')
       .on('postgres_changes', {
-        event:  'UPDATE',
+        event: 'UPDATE',
         schema: 'public',
-        table:  'coins',
-        filter: 'is_collected=eq.true',
+        table: 'coins',
+        filter: 'collected=eq.true',
       }, (payload: any) => {
         setCoins((prev: CoinRow[]) => prev.filter((c: CoinRow) => c.id !== payload.new.id))
       })
@@ -51,16 +76,25 @@ export function useCoins(lat: number | null, lng: number | null) {
   }, [supabase])
 
   const collectCoin = useCallback(async (coinId: string, userLat: number, userLng: number) => {
+    if (!profile) {
+      return { success: false, error: 'Debes iniciar sesión para recolectar monedas' }
+    }
+
+    // Check daily limit for free users
+    if (profile.plan === 'free' && profile.coins_collected_today >= 10) {
+      return { success: false, error: 'Llegaste al límite diario de 10 monedas. ¡Mejorá tu plan!' }
+    }
+
     try {
-      const res  = await fetch('/api/coins/collect', {
-        method:  'POST',
+      const res = await fetch('/api/coins/collect', {
+        method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ coinId, userLat, userLng }),
+        body: JSON.stringify({ coinId, userLat, userLng }),
       })
       
       if (!res.ok) {
-        console.error('Failed to collect coin:', res.statusText)
-        return { success: false, error: res.statusText }
+        const errorData = await res.json()
+        return { success: false, error: errorData.error || res.statusText }
       }
       
       const data = await res.json()
@@ -72,9 +106,9 @@ export function useCoins(lat: number | null, lng: number | null) {
       return data
     } catch (error) {
       console.error('Error collecting coin:', error)
-      return { success: false, error: 'Network error' }
+      return { success: false, error: 'Error de red' }
     }
-  }, [])
+  }, [profile])
 
   return { coins, loading, collectCoin, refresh: fetchCoins }
 }

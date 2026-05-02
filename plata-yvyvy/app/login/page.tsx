@@ -8,7 +8,6 @@ export default function LoginPage() {
   const [sent, setSent]       = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError]     = useState<string | null>(null)
-  const supabase              = createClient()
   const router                = useRouter()
 
   const handleMagicLink = async (e: React.FormEvent) => {
@@ -16,6 +15,7 @@ export default function LoginPage() {
     setLoading(true)
     setError(null)
 
+    const supabase = createClient()
     const { error } = await supabase.auth.signInWithOtp({
       email,
       options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
@@ -27,6 +27,7 @@ export default function LoginPage() {
   }
 
   const handleGoogle = async () => {
+    const supabase = createClient()
     await supabase.auth.signInWithOAuth({
       provider: 'google',
       options:  { redirectTo: `${window.location.origin}/auth/callback` },
