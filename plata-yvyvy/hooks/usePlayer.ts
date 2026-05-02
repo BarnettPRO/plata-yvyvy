@@ -7,6 +7,7 @@ import { xpForNextLevel } from '@/lib/game/coinGenerator'
 export function usePlayer() {
   const [player, setPlayer]   = useState<UserProfileRow | null>(null)
   const [loading, setLoading] = useState(true)
+  const [isCreatingProfile, setIsCreatingProfile] = useState(false)
 
   useEffect(() => {
     const fetchPlayer = async () => {
@@ -30,14 +31,14 @@ export function usePlayer() {
           console.error('Error fetching player:', error)
         } else if (data) {
           setPlayer(data)
-        } else {
-          // Profile doesn't exist, create it
+        } else if (!isCreatingProfile) {
+          // Profile doesn't exist, create it (but only once)
+          setIsCreatingProfile(true)
           try {
             const { error: insertError } = await (supabase as any)
               .from('user_profile')
               .insert({
                 id: user.id,
-                email: user.email,
                 plan: 'free',
                 coins_collected_today: 0,
                 streak_days: 0,
@@ -45,7 +46,6 @@ export function usePlayer() {
                 total_coins: 0,
                 total_value: 0,
                 level: 1,
-                created_at: new Date().toISOString(),
               })
               .select()
               .single()
@@ -57,6 +57,8 @@ export function usePlayer() {
             }
           } catch (err) {
             console.error('Error in player profile creation:', err)
+          } finally {
+            setIsCreatingProfile(false)
           }
         }
 
