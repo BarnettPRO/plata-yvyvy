@@ -35,25 +35,28 @@ export function usePlayer() {
           // Profile doesn't exist, create it (but only once)
           setIsCreatingProfile(true)
           try {
-            const { error: insertError } = await (supabase as any)
+            const { data: newProfile, error: insertError } = await (supabase as any)
               .from('user_profile')
-              .insert({
+              .upsert({
                 id: user.id,
-                plan: 'free',
                 coins_collected_today: 0,
                 streak_days: 0,
-                radar_pings_today: 3,
+                radar_pings_today: 0,
                 total_coins: 0,
                 total_value: 0,
                 level: 1,
-              })
+                achievements: [],
+                is_admin: false,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+              }, { onConflict: 'id' })
               .select()
               .single()
 
             if (insertError) {
               console.error('Error creating player profile:', insertError)
             } else {
-              setPlayer(insertError ? null : (insertError as any))
+              setPlayer(newProfile)
             }
           } catch (err) {
             console.error('Error in player profile creation:', err)
