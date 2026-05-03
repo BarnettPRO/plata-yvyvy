@@ -26,7 +26,7 @@ export function useCoins(lat: number | null, lng: number | null) {
       // Filter coins based on user's plan
       let filteredCoins = data || []
       if (profile) {
-        filteredCoins = data.filter(coin => {
+        filteredCoins = data.filter((coin: any) => {
           if (coin.rarity === 'common') return true
           if (coin.rarity === 'rare') return ['explorador', 'conquistador', 'leyenda'].includes(profile.plan)
           if (coin.rarity === 'legendary') return ['conquistador', 'leyenda'].includes(profile.plan)
@@ -34,7 +34,7 @@ export function useCoins(lat: number | null, lng: number | null) {
         })
       } else {
         // Non-authenticated users only see common coins
-        filteredCoins = data.filter(coin => coin.rarity === 'common')
+        filteredCoins = data.filter((coin: any) => coin.rarity === 'common')
       }
 
       setCoins(filteredCoins)

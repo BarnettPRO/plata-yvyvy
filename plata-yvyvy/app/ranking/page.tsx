@@ -42,7 +42,7 @@ export default function RankingPage() {
   useEffect(() => {
     const getCurrentUser = async () => {
       const supabase = createClient()
-      const { data: { user } } = await supabase.auth.getUser()
+      const { data: { user } } = await supabase!.auth.getUser()
       if (user) {
         setUserId(user.id)
       }
@@ -102,7 +102,7 @@ export default function RankingPage() {
             {tabs.map((tab) => (
               <button
                 key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
+                onClick={() => setActiveTab(tab.id as 'national' | 'city' | 'barrio' | 'friends')}
                 className={`flex-1 py-2 px-3 rounded-lg font-medium transition-all text-sm ${
                   activeTab === tab.id
                     ? 'bg-yellow-400 text-black'

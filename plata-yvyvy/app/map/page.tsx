@@ -170,8 +170,8 @@ export default function MapPage() {
         {profile?.plan === 'free' && (
           <div className="mt-2">
             <Radar 
-              userLat={lat} 
-              userLng={lng} 
+              userLat={lat || 0}
+              userLng={lng || 0} 
               onPingUsed={() => {
                 // This will trigger a profile refresh
                 window.location.reload()

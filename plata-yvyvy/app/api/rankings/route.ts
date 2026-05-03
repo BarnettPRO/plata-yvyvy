@@ -43,7 +43,7 @@ async function getNationalRanking(supabase: any, userId: string | null) {
   }
 
   // Add rank numbers and crown icons for top 3
-  const rankings = data.map((player, index) => ({
+  const rankings = data.map((player: any, index: number) => ({
     rank: index + 1,
     id: player.id,
     username: `Jugador ${player.id.slice(0, 8).toUpperCase()}`,
@@ -88,7 +88,7 @@ async function getCityRanking(supabase: any, userId: string | null) {
     throw error
   }
 
-  const rankings = data.map((player, index) => ({
+  const rankings = data.map((player: any, index: number) => ({
     rank: index + 1,
     id: player.id,
     username: `Jugador ${player.id.slice(0, 8).toUpperCase()}`,
@@ -149,7 +149,7 @@ async function getBarrioRanking(supabase: any, userId: string | null) {
     throw error
   }
 
-  const rankings = data.map((player, index) => ({
+  const rankings = data.map((player: any, index: number) => ({
     rank: index + 1,
     id: player.id,
     username: `Jugador ${player.id.slice(0, 8).toUpperCase()}`,
@@ -209,7 +209,7 @@ async function getFriendsRanking(supabase: any, userId: string | null) {
     })
   }
 
-  const rankings = data.map((player, index) => ({
+  const rankings = data.map((player: any, index: number) => ({
     rank: index + 1,
     id: player.id,
     username: `Jugador ${player.id.slice(0, 8).toUpperCase()}`,

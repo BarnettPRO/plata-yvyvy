@@ -13,8 +13,6 @@ const nextConfig = {
       { protocol: 'https', hostname: 'tile.openstreetmap.org' },
     ],
   },
-  // Required for Leaflet
-  transpilePackages: ['leaflet', 'react-leaflet'],
 }
 
 module.exports = nextConfig

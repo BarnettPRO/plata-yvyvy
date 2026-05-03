@@ -1,11 +1,11 @@
 'use client'
 import { useEffect, useState } from 'react'
-import { CoinType } from '@/types/database.types'
+import { CoinRarity } from '@/types/database.types'
 import { COIN_COLOR, COIN_EMOJI } from '@/lib/game/coinGenerator'
 
 interface CollectToast {
   xp:      number
-  type:    CoinType
+  type:    CoinRarity
   newLevel?: number
 }
 
