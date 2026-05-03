@@ -1,0 +1,200 @@
+import { useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { base44 } from '@/api/base44Client';
+import { MapContainer, TileLayer, useMapEvents } from 'react-leaflet';
+import { motion } from 'framer-motion';
+import { Link } from 'react-router-dom';
+import { ArrowLeft, Trash2, Zap, MapPin } from 'lucide-react';
+import 'leaflet/dist/leaflet.css';
+import CoinMarker from '@/components/map/CoinMarker';
+
+const VALUES = [50, 100, 500, 1000];
+
+// Paraguay bounding box
+const PY_BOUNDS = { minLat: -27.6, maxLat: -19.3, minLng: -62.7, maxLng: -54.3 };
+
+function randomCoinsInParaguay(count) {
+  return Array.from({ length: count }, () => ({
+    lat: PY_BOUNDS.minLat + Math.random() * (PY_BOUNDS.maxLat - PY_BOUNDS.minLat),
+    lng: PY_BOUNDS.minLng + Math.random() * (PY_BOUNDS.maxLng - PY_BOUNDS.minLng),
+    value: VALUES[Math.floor(Math.random() * VALUES.length)],
+    is_active: true,
+    is_collected: false,
+  }));
+}
+
+function MapClickHandler({ onMapClick }) {
+  useMapEvents({ click: (e) => onMapClick(e.latlng) });
+  return null;
+}
+
+export default function Admin() {
+  const [selectedValue, setSelectedValue] = useState(100);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const queryClient = useQueryClient();
+
+  const { data: coins = [] } = useQuery({
+    queryKey: ['admin-coins'],
+    queryFn: () => base44.entities.Coin.list('-created_date', 200),
+  });
+
+  const addCoinMutation = useMutation({
+    mutationFn: (data) => base44.entities.Coin.create(data),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin-coins'] }),
+  });
+
+  const deleteCoinMutation = useMutation({
+    mutationFn: (id) => base44.entities.Coin.delete(id),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin-coins'] }),
+  });
+
+  const handleMapClick = ({ lat, lng }) => {
+    addCoinMutation.mutate({
+      lat, lng,
+      value: selectedValue,
+      is_active: true,
+      is_collected: false,
+    });
+  };
+
+  const generateRandom = async () => {
+    setIsGenerating(true);
+    const newCoins = randomCoinsInParaguay(20);
+    await base44.entities.Coin.bulkCreate(newCoins);
+    queryClient.invalidateQueries({ queryKey: ['admin-coins'] });
+    setIsGenerating(false);
+  };
+
+  const clearAll = async () => {
+    if (!confirm('¿Eliminar TODAS las monedas?')) return;
+    for (const coin of coins) {
+      await base44.entities.Coin.delete(coin.id);
+    }
+    queryClient.invalidateQueries({ queryKey: ['admin-coins'] });
+  };
+
+  const activeCoins = coins.filter(c => c.is_active && !c.is_collected);
+  const collectedCoins = coins.filter(c => c.is_collected);
+
+  return (
+    <div className="min-h-screen bg-background">
+      {/* Header */}
+      <div className="sticky top-0 z-10 bg-background/80 backdrop-blur border-b border-border px-4 py-4 flex items-center gap-3">
+        <Link to="/">
+          <button className="p-2 rounded-xl hover:bg-secondary transition-colors">
+            <ArrowLeft className="w-5 h-5" />
+          </button>
+        </Link>
+        <h1 className="text-xl font-bold font-grotesk">Panel Admin</h1>
+        <span className="text-2xl ml-auto">⚙️</span>
+      </div>
+
+      <div className="max-w-4xl mx-auto px-4 py-6 space-y-6">
+        {/* Stats */}
+        <div className="grid grid-cols-3 gap-3">
+          {[
+            { label: 'Monedas activas (Ojeporu)', value: activeCoins.length, icon: '🟡' },
+            { label: 'Ñemuhẽ (Recolectadas)', value: collectedCoins.length, icon: '✅' },
+            { label: 'Total (Opaichagua)', value: coins.length, icon: '📊' },
+          ].map(s => (
+            <div key={s.label} className="bg-card border border-border rounded-2xl p-4 text-center">
+              <div className="text-2xl mb-1">{s.icon}</div>
+              <div className="text-xl font-bold font-grotesk">{s.value}</div>
+              <div className="text-xs text-muted-foreground">{s.label}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* Controls */}
+        <div className="bg-card border border-border rounded-2xl p-4 space-y-4">
+          <h2 className="font-semibold font-grotesk flex items-center gap-2">
+            <MapPin className="w-4 h-4 text-primary" /> Añadir Monedas (Mopita plata)
+          </h2>
+          <div className="flex gap-2 flex-wrap">
+            {VALUES.map(v => (
+              <button
+                key={v}
+                onClick={() => setSelectedValue(v)}
+                className={`px-4 py-2 rounded-xl font-grotesk font-semibold text-sm border transition-all ${
+                  selectedValue === v
+                    ? 'bg-yellow-500 text-yellow-900 border-yellow-400'
+                    : 'bg-secondary border-border text-foreground hover:bg-muted'
+                }`}
+              >
+                ₲ {v.toLocaleString()}
+              </button>
+            ))}
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Hacé clic en el mapa para colocar una moneda de ₲ {selectedValue.toLocaleString()} — (Ejapukai mapa-pe)
+          </p>
+
+          <div className="flex gap-3 flex-wrap">
+            <button
+              onClick={generateRandom}
+              disabled={isGenerating}
+              className="flex items-center gap-2 px-4 py-2 bg-accent text-accent-foreground rounded-xl font-semibold text-sm hover:opacity-90 transition-opacity disabled:opacity-50"
+            >
+              <Zap className="w-4 h-4" />
+              {isGenerating ? 'Generando…' : 'Generar 20 aleatorias en Paraguay (Omoheñói 20)'}
+            </button>
+            <button
+              onClick={clearAll}
+              className="flex items-center gap-2 px-4 py-2 bg-destructive/10 text-destructive border border-destructive/30 rounded-xl font-semibold text-sm hover:bg-destructive/20 transition-colors"
+            >
+              <Trash2 className="w-4 h-4" />
+              Limpiar todo
+            </button>
+          </div>
+        </div>
+
+        {/* Map */}
+        <div className="rounded-2xl overflow-hidden border border-border" style={{ height: 450 }}>
+          <MapContainer
+            center={[-25.2867, -57.647]}
+            zoom={13}
+            style={{ width: '100%', height: '100%' }}
+          >
+            <TileLayer
+              url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+              attribution='&copy; CARTO'
+            />
+            <MapClickHandler onMapClick={handleMapClick} />
+            {coins.filter(c => !c.is_collected).map(coin => (
+              <CoinMarker key={coin.id} coin={coin} inRange={false} onCollect={() => {}} />
+            ))}
+          </MapContainer>
+        </div>
+
+        {/* Coin list */}
+        <div className="bg-card border border-border rounded-2xl overflow-hidden">
+          <div className="px-4 py-3 border-b border-border font-semibold font-grotesk text-sm">
+            Todas las monedas — Plata opaichagua ({coins.length})
+          </div>
+          <div className="divide-y divide-border max-h-80 overflow-y-auto">
+            {coins.map(coin => (
+              <div key={coin.id} className="flex items-center gap-3 px-4 py-3">
+                <span className="text-lg">🪙</span>
+                <div className="flex-1 text-sm">
+                  <span className="font-grotesk font-semibold text-gold">₲ {coin.value.toLocaleString()}</span>
+                  <span className="text-muted-foreground ml-2">
+                    {coin.lat?.toFixed(4)}, {coin.lng?.toFixed(4)}
+                  </span>
+                </div>
+                <span className={`text-xs px-2 py-0.5 rounded-full ${coin.is_collected ? 'bg-green-500/20 text-green-400' : 'bg-yellow-500/20 text-yellow-400'}`}>
+                  {coin.is_collected ? 'Ñemuhẽ ✓' : 'Oĩma 🟡'}
+                </span>
+                <button
+                  onClick={() => deleteCoinMutation.mutate(coin.id)}
+                  className="p-1.5 hover:bg-destructive/20 rounded-lg text-destructive transition-colors"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
