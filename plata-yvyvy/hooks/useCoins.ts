@@ -44,17 +44,6 @@ export function useCoins(lat: number | null, lng: number | null) {
       }
 
       setCoins(filteredCoins)
-
-      // Trigger immediate spawn if no coins exist
-      if (filteredCoins.length === 0) {
-        try {
-          await fetch('/api/spawn-coins', { method: 'POST' })
-          // Refetch coins after spawning
-          setTimeout(() => fetchCoins(), 1000)
-        } catch (spawnError) {
-          console.error('Error triggering coin spawn:', spawnError)
-        }
-      }
     } catch (error) {
       console.error('Error fetching coins:', error)
     } finally {
@@ -68,6 +57,14 @@ export function useCoins(lat: number | null, lng: number | null) {
     const interval = setInterval(fetchCoins, 30_000)
     return () => clearInterval(interval)
   }, [fetchCoins])
+
+  // Trigger spawn once if no coins exist
+  useEffect(() => {
+    if (coins.length === 0) {
+      fetch('/api/spawn-coins', { method: 'POST' })
+        .catch(() => console.log('Spawn failed'))
+    }
+  }, []) // runs once only, no retry
 
   // Realtime subscription
   useEffect(() => {
