@@ -11,7 +11,7 @@ export function useCoins(lat: number | null, lng: number | null) {
   const supabase = createClient()
 
   const fetchCoins = useCallback(async () => {
-    if (!lat || !lng) return
+    if (!lat || !lng || !supabase) return
     setLoading(true)
     try {
       const { data, error } = await supabase
@@ -60,6 +60,8 @@ export function useCoins(lat: number | null, lng: number | null) {
 
   // Realtime subscription
   useEffect(() => {
+    if (!supabase) return
+    
     const channel = supabase
       .channel('coins-realtime')
       .on('postgres_changes', {
@@ -73,7 +75,7 @@ export function useCoins(lat: number | null, lng: number | null) {
       .subscribe()
 
     return () => { supabase.removeChannel(channel) }
-  }, [supabase])
+  }, [])
 
   const collectCoin = useCallback(async (coinId: string, userLat: number, userLng: number) => {
     if (!profile) {
