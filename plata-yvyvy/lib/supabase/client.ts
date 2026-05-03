@@ -7,6 +7,7 @@ export function createClient() {
   
   // Return null during build time/static generation
   if (typeof window === 'undefined' || !url || !key) {
+    console.warn('Supabase environment variables not found:', { url: !!url, key: !!key })
     return null
   }
   
