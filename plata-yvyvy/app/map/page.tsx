@@ -162,7 +162,7 @@ export default function MapPage() {
       </div>
 
       {/* Map */}
-      <div className="flex-1 relative">
+      <div className="flex-1 relative max-h-[calc(100vh-200px)]">
         {lat && lng && (
           <GameMap
             userLat={lat}

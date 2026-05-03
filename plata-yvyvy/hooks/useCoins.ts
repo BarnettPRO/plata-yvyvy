@@ -11,23 +11,17 @@ export function useCoins(lat: number | null, lng: number | null) {
   const supabase = createClient()
 
   const fetchCoins = useCallback(async () => {
-    if (!lat || !lng || !supabase) return
+    if (!lat || !lng) return
     setLoading(true)
     try {
-      const { data, error } = await supabase
-        .from('coins')
-        .select('*')
-        .eq('collected', false)
-        .gte('lat', lat - 0.009) // ~1km bounding box
-        .lte('lat', lat + 0.009)
-        .gte('lng', lng - 0.012)
-        .lte('lng', lng + 0.012)
-        .limit(50)
-
-      if (error) {
-        console.error('Failed to fetch coins:', error)
+      // Use the API which handles coin spawning dynamically
+      const response = await fetch(`/api/coins?lat=${lat}&lng=${lng}`)
+      if (!response.ok) {
+        console.error('Failed to fetch coins:', response.statusText)
         return
       }
+      
+      const { coins: data } = await response.json()
 
       // Filter coins based on user's plan
       let filteredCoins = data || []

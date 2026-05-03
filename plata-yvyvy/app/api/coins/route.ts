@@ -61,7 +61,7 @@ export async function GET(request: NextRequest) {
 
 function generateRandomCoins(lat: number, lng: number, count: number) {
   const coins = []
-  const rarities = ['common', 'common', 'common', 'common', 'common', 'rare', 'rare', 'legendary']
+  const rarities = ['common', 'common', 'common', 'common', 'common', 'common', 'common', 'common']
   const values = { common: [50, 100], rare: [100, 500], legendary: [500, 1000] }
 
   for (let i = 0; i < count; i++) {

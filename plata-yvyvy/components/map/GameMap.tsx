@@ -29,13 +29,19 @@ export default function GameMap({
 
   // Init map once
   useEffect(() => {
-    if (mapRef.current || !containerRef.current) return
+    if (!containerRef.current) return
 
     // Dynamic import to avoid SSR issues
     import('leaflet').then(L => {
+      // Clear any existing map instance
+      if (mapRef.current) {
+        mapRef.current.remove()
+        mapRef.current = null
+      }
+
       const map = L.map(containerRef.current!, {
         center: [userLat, userLng],
-        zoom: 17,
+        zoom: 16,
         zoomControl: true,
         attributionControl: false,
       })
@@ -82,8 +88,10 @@ export default function GameMap({
     })
 
     return () => {
-      mapRef.current?.remove()
-      mapRef.current = null
+      if (mapRef.current) {
+        mapRef.current.remove()
+        mapRef.current = null
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
@@ -188,5 +196,6 @@ export default function GameMap({
     }
   }
 
-  return <div ref={containerRef} className="w-full h-full" />
-}
+  return (
+    <div ref={containerRef} className="w-full h-full rounded-lg overflow-hidden" />
+  )}

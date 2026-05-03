@@ -10,18 +10,20 @@ export default function ProfilePage() {
 
   const handleSignOut = async () => {
     const supabase = createClient()
-    await supabase.auth.signOut()
-    router.push('/login')
+    if (supabase) {
+      await supabase.auth.signOut()
+      router.push('/login')
+    }
   }
 
   const handleShare = () => {
     if (!player) return
-    const text = `¡Jugá Plata Yvyvy! Usá mi código ${player.referral_code} para empezar con bonus. 🥇🇵🇾`
+    const text = `¡Jugá Plata Yvyvy! 🥇🇵🇾`
     if (navigator.share) {
       navigator.share({ title: 'Plata Yvyvy', text })
     } else {
       navigator.clipboard.writeText(text)
-      alert('Código copiado al portapapeles!')
+      alert('¡Plata Yvyvy copiado al portapapeles!')
     }
   }
 
@@ -41,15 +43,13 @@ export default function ProfilePage() {
           <div className="flex flex-col items-center text-center mb-6">
             <div className="w-20 h-20 rounded-2xl bg-white/5 border border-white/10
                             flex items-center justify-center text-4xl mb-3 overflow-hidden">
-              {player.avatar_url
-                ? <img src={player.avatar_url} alt="" className="w-full h-full object-cover" />
-                : '👤'}
+              👤
             </div>
-            <h1 className="font-display text-2xl font-bold text-white">{player.username}</h1>
+            <h1 className="font-display text-2xl font-bold text-white">Jugador</h1>
             <div className="flex items-center gap-2 mt-1">
               <span className="text-yellow-400 font-bold">Nivel {player.level}</span>
               <span className="text-white/30">·</span>
-              <span className="text-white/50">{player.total_xp.toLocaleString()} XP</span>
+              <span className="text-white/50">{player.total_value?.toLocaleString() || 0} XP</span>
             </div>
           </div>
 
@@ -81,7 +81,7 @@ export default function ProfilePage() {
             <div className="flex gap-2">
               <div className="flex-1 bg-white/5 rounded-xl px-4 py-3 font-mono font-bold
                               text-yellow-400 text-center tracking-widest text-lg">
-                {player.referral_code}
+                {player.id?.slice(0, 8).toUpperCase()}
               </div>
               <button
                 onClick={handleShare}

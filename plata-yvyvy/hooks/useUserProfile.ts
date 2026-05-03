@@ -41,9 +41,10 @@ export function useUserProfile() {
             .from('user_profile')
             .upsert({
               id: user.id,
+              plan: 'free',
               coins_collected_today: 0,
               streak_days: 0,
-              radar_pings_today: 0,
+              radar_pings_today: 3,
               total_coins: 0,
               total_value: 0,
               level: 1,

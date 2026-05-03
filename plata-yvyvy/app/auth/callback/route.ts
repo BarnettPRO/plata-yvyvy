@@ -34,7 +34,6 @@ export async function GET(request: NextRequest) {
             .from('user_profile')
             .insert({
               id: data.user.id,
-              email: data.user.email,
               plan: 'free',
               coins_collected_today: 0,
               streak_days: 0,
