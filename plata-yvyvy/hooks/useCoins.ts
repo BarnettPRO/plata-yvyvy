@@ -62,8 +62,9 @@ export function useCoins(lat: number | null, lng: number | null) {
   useEffect(() => {
     if (!supabase) return
     
+    const channelName = `coins-realtime-${Date.now()}`
     const channel = supabase
-      .channel('coins-realtime')
+      .channel(channelName)
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'coins' },

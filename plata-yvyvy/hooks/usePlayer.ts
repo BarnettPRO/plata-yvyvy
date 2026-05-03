@@ -68,8 +68,9 @@ export function usePlayer() {
         setLoading(false)
 
         // Listen for realtime updates to own profile
+        const channelName = `player-profile-${Date.now()}`
         const channel = supabase
-          .channel('player-profile')
+          .channel(channelName)
           .on(
             'postgres_changes',
             { event: '*', schema: 'public', table: 'user_profile' },
