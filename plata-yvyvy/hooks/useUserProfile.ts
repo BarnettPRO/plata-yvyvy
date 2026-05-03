@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { UserProfileRow, PlanType } from '@/types/database.types'
+import { getLocationFromCoordinates } from '@/lib/geolocation/locationService'
 
 export function useUserProfile() {
   const [profile, setProfile] = useState<UserProfileRow | null>(null)
@@ -50,6 +51,17 @@ export function useUserProfile() {
               level: 1,
               achievements: [],
               is_admin: false,
+              city: null,
+              barrio: null,
+              referral_code: null,
+              referred_by: null,
+              last_collection_date: null,
+              current_streak: 0,
+              streak_multiplier: 1.0,
+              streak_rescue_available: true,
+              last_rescue_date: null,
+              has_gold_crown: false,
+              last_coin_spawn_seen: null,
               created_at: new Date().toISOString(),
               updated_at: new Date().toISOString()
             }, { onConflict: 'id' })
@@ -106,5 +118,39 @@ export function useUserProfile() {
     return true
   }
 
-  return { profile, loading, updateProfile }
+  const updateUserLocation = async (lat: number, lng: number) => {
+    if (!profile || !supabase) return false
+
+    try {
+      const location = await getLocationFromCoordinates(lat, lng)
+      
+      const { error } = await supabase
+        .from('user_profile')
+        .update({
+          city: location.city,
+          barrio: location.barrio,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', profile.id)
+
+      if (error) {
+        console.error('Error updating location:', error)
+        return false
+      }
+
+      // Update local profile state
+      setProfile({
+        ...profile,
+        city: location.city,
+        barrio: location.barrio
+      })
+
+      return true
+    } catch (error) {
+      console.error('Error in updateUserLocation:', error)
+      return false
+    }
+  }
+
+  return { profile, loading, updateProfile, updateUserLocation }
 }

@@ -91,7 +91,7 @@ export default function AuthPage() {
               disabled={loading}
               className="w-full py-3 rounded-xl font-bold text-black bg-[#FFD700] hover:bg-yellow-400 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
             >
-              {loading ? 'Enviando...' : 'Enviar enlace mágico'}
+              {loading ? 'Enviando...' : '✉️ Iniciar Sesión'}
             </button>
           </form>
 
@@ -106,7 +106,7 @@ export default function AuthPage() {
             disabled={loading}
             className="w-full py-3 rounded-xl font-bold text-white bg-white/10 hover:bg-white/20 border border-white/20 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
           >
-            Continuar con Google
+            Iniciar con Google
           </button>
 
           {message && (

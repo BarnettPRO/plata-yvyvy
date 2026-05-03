@@ -97,7 +97,7 @@ export default function Navbar() {
                   onClick={handleLogout}
                   className="text-white/50 hover:text-white text-sm transition-colors"
                 >
-                  Salir
+                  Cerrar Sesión
                 </button>
               </div>
             ) : (

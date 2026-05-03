@@ -1,12 +1,14 @@
 'use client'
 import dynamic from 'next/dynamic'
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { useGeolocation } from '@/hooks/useGeolocation'
 import { useCoins } from '@/hooks/useCoins'
 import { useUserProfile } from '@/hooks/useUserProfile'
+import { useStreak, useRespawnCountdown } from '@/hooks/useStreak'
 import CoinPopup from '@/components/ui/CoinPopup'
 import Radar from '@/components/ui/Radar'
 import BottomNav from '@/components/layout/BottomNav'
+// import OnboardingOverlay from '@/components/ui/OnboardingOverlay'
 import Link from 'next/link'
 import { COIN_CONFIGS } from '@/types/database.types'
 
@@ -23,14 +25,22 @@ interface CollectToast {
 export default function MapPage() {
   const { lat, lng, error: geoError, loading: geoLoading } = useGeolocation()
   const { coins, collectCoin } = useCoins(lat, lng)
-  const { profile } = useUserProfile()
+  const { profile, updateUserLocation } = useUserProfile()
+  const { streak, updateStreakOnCollect } = useStreak(profile?.id || null)
+  const { timeUntilRespawn } = useRespawnCountdown()
   const [toast, setToast] = useState<CollectToast | null>(null)
   const [placementMode, setPlacementMode] = useState(false)
+  const [showOnboarding, setShowOnboarding] = useState(true)
 
   const handleCollect = useCallback(async (coinId: string, userLat: number, userLng: number) => {
     const result = await collectCoin(coinId, userLat, userLng)
     
     if (result.success) {
+      // Update streak on successful collection
+      if (profile?.id) {
+        updateStreakOnCollect()
+      }
+      
       setToast({
         value: result.value,
         rarity: result.rarity,
@@ -43,7 +53,14 @@ export default function MapPage() {
         error: result.error,
       })
     }
-  }, [collectCoin])
+  }, [collectCoin, profile?.id, updateStreakOnCollect])
+
+  // Update user location when GPS is available
+  useEffect(() => {
+    if (lat && lng && updateUserLocation) {
+      updateUserLocation(lat, lng)
+    }
+  }, [lat, lng, updateUserLocation])
 
   if (geoLoading) {
     return (
@@ -68,6 +85,15 @@ export default function MapPage() {
 
   return (
     <div className="h-screen flex flex-col bg-[#0a0d1a] overflow-hidden">
+      {/* Onboarding Overlay - Temporarily disabled */}
+      {/* {showOnboarding && lat && lng && (
+        <OnboardingOverlay
+          onComplete={() => setShowOnboarding(false)}
+          userLat={lat}
+          userLng={lng}
+        />
+      )} */}
+      
       {/* Header */}
       <div className="absolute top-0 inset-x-0 z-30 p-3">
         {/* User info and streak */}
@@ -96,8 +122,11 @@ export default function MapPage() {
               <div className="text-right">
                 <div className="text-white/60 text-sm">
                   {profile.plan === 'free' 
-                    ? `${profile.coins_collected_today}/10 monedas`
-                    : 'Monedas ilimitadas'
+                    ? `${(profile.total_value || 0).toLocaleString('es-PY', {
+                      minimumFractionDigits: 0,
+                      maximumFractionDigits: 0,
+                    })} tesoros`
+                    : 'Tesoros ilimitados'
                   }
                 </div>
                 {profile.plan === 'free' && (
@@ -110,14 +139,19 @@ export default function MapPage() {
           </div>
         )}
 
-        {/* Coin count */}
+        {/* Coin count and respawn timer */}
         <div className="flex gap-2">
           <div className="bg-white/10 backdrop-blur-sm rounded-xl px-3 py-2 flex items-center gap-2">
-            <span>💰</span>
+            <span>✨</span>
             <span className="font-semibold text-yellow-400">{coins.length}</span>
-            <span className="text-white/60 text-sm">cercanas</span>
+            <span className="text-white/60 text-sm">tesoros cercanos</span>
           </div>
           
+          <div className="bg-white/10 backdrop-blur-sm rounded-xl px-3 py-2 flex items-center gap-2">
+            <span>⏰</span>
+            <span className="text-white/60 text-sm">{timeUntilRespawn}</span>
+          </div>
+        
           {profile && ['conquistador', 'leyenda'].includes(profile.plan) && (
             <button
               onClick={() => setPlacementMode(!placementMode)}
@@ -147,11 +181,11 @@ export default function MapPage() {
         )}
 
         {/* Free user upgrade prompt */}
-        {profile?.plan === 'free' && profile.coins_collected_today >= 8 && (
+        {profile?.plan === 'free' && (profile.coins_collected_today || 0) >= 8 && (
           <div className="mt-2 bg-gradient-to-r from-[#FFD700]/20 to-[#FFD700]/10 rounded-xl p-2 border border-[#FFD700]/30">
             <div className="text-center">
               <p className="text-yellow-400 text-sm font-medium">
-                ⚠️ Casi llegás al límite diario
+                ⚠️ Casi llegás al límite diario de tesoros
               </p>
               <Link href="/pricing" className="text-white/80 text-xs underline">
                 Mejorá tu plan →

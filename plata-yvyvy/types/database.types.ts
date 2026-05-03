@@ -1,6 +1,6 @@
 export type PlanType = 'free' | 'explorador' | 'conquistador' | 'leyenda'
-export type CoinRarity = 'common' | 'rare' | 'legendary'
-export type CoinValue = 50 | 100 | 500 | 1000
+export type CoinRarity = 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary'
+export type CoinValue = 50000 | 500000 | 2000000 | 10000000 | 50000000
 
 export interface Database {
   public: {
@@ -18,6 +18,19 @@ export interface Database {
           level: number
           achievements: string[]
           is_admin: boolean
+          city: string | null
+          barrio: string | null
+          referral_code: string | null
+          referred_by: string | null
+          last_collection_date: string | null
+          current_streak: number
+          streak_multiplier: number
+          streak_rescue_available: boolean
+          last_rescue_date: string | null
+          has_gold_crown: boolean
+          last_coin_spawn_seen: string | null
+          is_barrio_owner: boolean
+          has_seen_onboarding: boolean
           created_at: string
           updated_at: string
         }
@@ -152,20 +165,40 @@ export const PLAN_CONFIGS: Record<PlanType, PlanConfig> = {
   },
 }
 
-export const COIN_CONFIGS: Record<CoinRarity, { color: string; emoji: string; valueRange: CoinValue[] }> = {
-  common: {
-    color: '#CD7F32', // bronze
-    emoji: '🥉',
-    valueRange: [50, 100],
+export const COIN_CONFIGS: Record<CoinRarity, { value: number; color: string; emoji: string; name: string; narrative: string }> = {
+  common: { 
+    value: 50000, 
+    color: '#8B7355', 
+    emoji: '🪙',
+    name: 'Moneda colonial oxidada',
+    narrative: 'Resto de la época jesuita'
   },
-  rare: {
-    color: '#3B82F6', // blue
-    emoji: '🥈',
-    valueRange: [100, 500],
+  uncommon: { 
+    value: 500000, 
+    color: '#CD853F', 
+    emoji: '💰',
+    name: 'Moneda de la Guerra Grande',
+    narrative: 'Enterrada por una familia en 1867'
+  },
+  rare: { 
+    value: 2000000, 
+    color: '#FFD700', 
+    emoji: '🎖️',
+    name: 'Medalla militar',
+    narrative: 'De un soldado de la Triple Alianza'
+  },
+  epic: { 
+    value: 10000000, 
+    color: '#FF6B6B', 
+    emoji: '💎',
+    name: 'Joya jesuita',
+    narrative: 'De las misiones del s.XVII'
   },
   legendary: {
-    color: '#EC4899', // pink
-    emoji: '🥇',
-    valueRange: [500, 1000],
-  },
+    value: 50000000,
+    color: '#FF1744',
+    emoji: '👑',
+    name: 'Baúl de oro',
+    narrative: 'El tesoro de López mismo'
+  }
 }

@@ -70,7 +70,7 @@ export default function LoginPage() {
         <div className="text-center mb-8">
           <div className="text-6xl mb-4">🥇</div>
           <h1 className="font-display text-3xl font-bold text-[#FFD700]">Plata Yvyvy</h1>
-          <p className="text-white/50 mt-2">Iniciá sesión para jugar</p>
+          <p className="text-white/50 mt-2">Iniciá sesión y buscá la Plata Yvyvy</p>
         </div>
 
         {sent ? (
@@ -109,7 +109,7 @@ export default function LoginPage() {
               className="w-full py-3 rounded-xl font-bold text-black bg-[#FFD700]
                          hover:bg-yellow-300 disabled:opacity-50 transition-all duration-200"
             >
-              {loading ? 'Enviando...' : '✉️ Recibir link mágico'}
+              {loading ? 'Enviando...' : '✉️ Iniciar Sesión'}
             </button>
 
             <div className="relative">
@@ -134,7 +134,7 @@ export default function LoginPage() {
                 <path fill="#4CAF50" d="M24 45c5.2 0 10-1.9 13.7-5L31 33.9C28.9 35.3 26.5 36 24 36c-5.2 0-9.6-3.3-11.3-8H6.1C9.4 37.5 16.1 45 24 45z"/>
                 <path fill="#1976D2" d="M43.6 20H24v8h11.3c-.8 2.3-2.3 4.3-4.3 5.7l6.7 5.2C41.6 35.2 44 30 44 24c0-1.3-.2-2.7-.4-4z"/>
               </svg>
-              Google
+              Iniciar con Google
             </button>
           </form>
         )}

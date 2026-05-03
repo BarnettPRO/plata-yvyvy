@@ -1,11 +1,13 @@
 'use client'
 import { usePlayer }      from '@/hooks/usePlayer'
+import { useStreak }       from '@/hooks/useStreak'
 import { createClient }   from '@/lib/supabase/client'
 import { useRouter }      from 'next/navigation'
 import BottomNav          from '@/components/layout/BottomNav'
 
 export default function ProfilePage() {
   const { player, xpProgress } = usePlayer()
+  const { streak, rescueStreak } = useStreak(player?.id || null)
   const router   = useRouter()
 
   const handleSignOut = async () => {
@@ -13,6 +15,15 @@ export default function ProfilePage() {
     if (supabase) {
       await supabase.auth.signOut()
       router.push('/login')
+    }
+  }
+
+  const handleRescue = async () => {
+    const result = await rescueStreak()
+    if (result.error) {
+      alert(result.error)
+    } else {
+      alert('¡Racha rescatada con éxito!')
     }
   }
 
@@ -50,8 +61,47 @@ export default function ProfilePage() {
               <span className="text-yellow-400 font-bold">Nivel {player.level}</span>
               <span className="text-white/30">·</span>
               <span className="text-white/50">{player.total_value?.toLocaleString() || 0} XP</span>
+              {player.is_barrio_owner && (
+                <>
+                  <span className="text-white/30">·</span>
+                  <span className="text-purple-400 font-bold">👑 Dueño del barrio</span>
+                </>
+              )}
             </div>
           </div>
+
+          {/* Streak display */}
+          {streak && (
+            <div className="glass rounded-2xl p-4 mb-4">
+              <div className="flex items-center justify-between mb-2">
+                <h2 className="font-semibold text-white flex items-center gap-2">
+                  🔥 Racha Diaria
+                  {streak.has_gold_crown && <span className="text-yellow-400">👑</span>}
+                </h2>
+                <span className="text-yellow-400 font-bold">{streak.streak_multiplier}x</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="text-2xl font-bold text-white">{streak.current_streak} días</div>
+                  <div className="text-xs text-white/40">
+                    {streak.current_streak >= 30 && '¡Leyenda! 3x XP'}
+                    {streak.current_streak >= 7 && streak.current_streak < 30 && '¡Maestro! 2x XP'}
+                    {streak.current_streak >= 3 && streak.current_streak < 7 && '¡Explorador! 1.5x XP'}
+                    {streak.current_streak < 3 && '¡Principiante!'}
+                  </div>
+                </div>
+                {streak.streak_rescue_available && streak.current_streak > 0 && (
+                  <button
+                    onClick={handleRescue}
+                    className="bg-orange-500 text-white font-bold rounded-xl px-4 py-2
+                           hover:bg-orange-400 transition-colors text-sm"
+                  >
+                    Rescatar (500 XP)
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
 
           {/* XP progress */}
           {xpProgress && (
@@ -99,7 +149,7 @@ export default function ProfilePage() {
             className="w-full py-3 rounded-xl text-red-400 border border-red-500/20
                        hover:bg-red-500/10 transition-colors font-semibold"
           >
-            Cerrar sesión
+            Cerrar Sesión
           </button>
         </div>
       </div>

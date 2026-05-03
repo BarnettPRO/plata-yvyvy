@@ -1,26 +1,32 @@
-import { CoinType } from '@/types/database.types'
+import { CoinRarity } from '@/types/database.types'
 
-const COIN_WEIGHTS: Record<CoinType, number> = {
-  bronze: 0.60,
-  silver: 0.30,
-  gold:   0.10,
+const COIN_WEIGHTS: Record<CoinRarity, number> = {
+  common: 0.60,
+  uncommon: 0.25,
+  rare: 0.10,
+  epic: 0.04,
+  legendary: 0.01,
 }
 
-const XP_RANGES: Record<CoinType, [number, number]> = {
-  bronze: [1, 50],
-  silver: [51, 200],
-  gold:   [201, 500],
+const VALUE_RANGES: Record<CoinRarity, [number, number]> = {
+  common: [50000, 50000],
+  uncommon: [500000, 500000],
+  rare: [2000000, 2000000],
+  epic: [10000000, 10000000],
+  legendary: [50000000, 50000000],
 }
 
-export function randomCoinType(): CoinType {
+export function randomCoinRarity(): CoinRarity {
   const roll = Math.random()
-  if (roll < COIN_WEIGHTS.bronze) return 'bronze'
-  if (roll < COIN_WEIGHTS.bronze + COIN_WEIGHTS.silver) return 'silver'
-  return 'gold'
+  if (roll < COIN_WEIGHTS.common) return 'common'
+  if (roll < COIN_WEIGHTS.common + COIN_WEIGHTS.uncommon) return 'uncommon'
+  if (roll < COIN_WEIGHTS.common + COIN_WEIGHTS.uncommon + COIN_WEIGHTS.rare) return 'rare'
+  if (roll < COIN_WEIGHTS.common + COIN_WEIGHTS.uncommon + COIN_WEIGHTS.rare + COIN_WEIGHTS.epic) return 'epic'
+  return 'legendary'
 }
 
-export function randomXP(type: CoinType): number {
-  const [min, max] = XP_RANGES[type]
+export function randomValue(rarity: CoinRarity): number {
+  const [min, max] = VALUE_RANGES[rarity]
   return Math.floor(Math.random() * (max - min + 1)) + min
 }
 
@@ -38,10 +44,10 @@ export function generateCoinsAround(
     const dLat = (r / 111.32) * Math.cos(angle)
     const dLng = (r / (111.32 * Math.cos((centerLat * Math.PI) / 180))) * Math.sin(angle)
 
-    const type = randomCoinType()
+    const rarity = randomCoinRarity()
     return {
-      type,
-      xp_value: randomXP(type),
+      rarity,
+      value: randomValue(rarity),
       lat: centerLat + dLat,
       lng: centerLng + dLng,
       is_collected: false,
@@ -64,14 +70,18 @@ export function levelFromXP(xp: number): number {
   return level
 }
 
-export const COIN_EMOJI: Record<CoinType, string> = {
-  bronze: '🥉',
-  silver: '🥈',
-  gold:   '🥇',
+export const COIN_EMOJI: Record<CoinRarity, string> = {
+  common: '🪙',
+  uncommon: '💰',
+  rare: '🎖️',
+  epic: '💎',
+  legendary: '👑',
 }
 
-export const COIN_COLOR: Record<CoinType, string> = {
-  bronze: '#CD7F32',
-  silver: '#C0C0C0',
-  gold:   '#FFD700',
+export const COIN_COLOR: Record<CoinRarity, string> = {
+  common: '#8B7355',
+  uncommon: '#CD853F',
+  rare: '#FFD700',
+  epic: '#FF6B6B',
+  legendary: '#FF1744',
 }
