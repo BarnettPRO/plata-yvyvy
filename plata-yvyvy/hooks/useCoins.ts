@@ -48,12 +48,7 @@ export function useCoins(lat: number | null, lng: number | null) {
       // Trigger immediate spawn if no coins exist
       if (filteredCoins.length === 0) {
         try {
-          await fetch('https://anskelgrnddgcvcgxkcf.supabase.co/functions/v1/spawn-coins', {
-            method: 'POST',
-            headers: {
-              'Authorization': 'Bearer ' + process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-            }
-          })
+          await fetch('/api/spawn-coins', { method: 'POST' })
           // Refetch coins after spawning
           setTimeout(() => fetchCoins(), 1000)
         } catch (spawnError) {
