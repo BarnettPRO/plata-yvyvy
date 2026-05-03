@@ -64,17 +64,22 @@ export function useCoins(lat: number | null, lng: number | null) {
     
     const channel = supabase
       .channel('coins-realtime')
-      .on('postgres_changes', {
-        event: 'UPDATE',
-        schema: 'public',
-        table: 'coins',
-        filter: 'collected=eq.true',
-      }, (payload: any) => {
-        setCoins((prev: CoinRow[]) => prev.filter((c: CoinRow) => c.id !== payload.new.id))
-      })
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'coins' },
+        (payload) => {
+          // Handle coin updates - remove collected coins
+          if (payload.eventType === 'UPDATE' && payload.new.collected === true) {
+            setCoins((prev: CoinRow[]) => prev.filter((c: CoinRow) => c.id !== payload.new.id))
+          }
+        }
+      )
       .subscribe()
 
-    return () => { supabase.removeChannel(channel) }
+    // cleanup
+    return () => {
+      supabase.removeChannel(channel)
+    }
   }, [])
 
   const collectCoin = useCallback(async (coinId: string, userLat: number, userLng: number) => {

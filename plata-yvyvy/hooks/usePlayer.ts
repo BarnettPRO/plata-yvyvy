@@ -70,15 +70,22 @@ export function usePlayer() {
         // Listen for realtime updates to own profile
         const channel = supabase
           .channel('player-profile')
-          .on('postgres_changes', {
-            event: 'UPDATE', schema: 'public', table: 'user_profile',
-            filter: `id=eq.${user.id}`, // Only listen for current user updates
-          }, (payload: any) => {
-            setPlayer(payload.new as UserProfileRow)
-          })
+          .on(
+            'postgres_changes',
+            { event: '*', schema: 'public', table: 'user_profile' },
+            (payload) => {
+              // Handle profile updates - only for current user
+              if (payload.eventType === 'UPDATE' && payload.new.id === user.id) {
+                setPlayer(payload.new as UserProfileRow)
+              }
+            }
+          )
           .subscribe()
 
-        return () => { supabase.removeChannel(channel) }
+        // cleanup
+        return () => {
+          supabase.removeChannel(channel)
+        }
       } catch (error) {
         console.error('Error fetching player:', error)
         setLoading(false)
