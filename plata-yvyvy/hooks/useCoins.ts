@@ -58,14 +58,7 @@ export function useCoins(lat: number | null, lng: number | null) {
     return () => clearInterval(interval)
   }, [fetchCoins])
 
-  // Trigger spawn once if no coins exist
-  useEffect(() => {
-    if (coins.length === 0) {
-      fetch('/api/spawn-coins', { method: 'POST' })
-        .catch(() => console.log('Spawn failed'))
-    }
-  }, []) // runs once only, no retry
-
+  
   // Realtime subscription
   useEffect(() => {
     if (!supabase) return
